@@ -63,7 +63,7 @@ Cold Call Trainer is a **voice-first practice arena** that runs on your laptop.
  New session --> Claude invents a persona (hidden from you)
         |
         v
- Live call  ◄--> ElevenLabs voice agent  (you speak, they react)
+ Live call  <--> ElevenLabs voice agent  (you speak, they react)
         |             records your mic + pitch/loudness samples
         v
  Hang up --> quick self-review ("what would I redo?")
