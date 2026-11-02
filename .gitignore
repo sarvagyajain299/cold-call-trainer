@@ -45,4 +45,3 @@ trainer.db*
 /recordings/
 dev.log
 *.stackdump
-.claude/
