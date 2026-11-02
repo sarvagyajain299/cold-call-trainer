@@ -74,6 +74,7 @@ export default function Home() {
         <nav className="mt-4 flex gap-2 text-sm">
           <Link href="/people" className="rounded-full border px-4 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900">People</Link>
           <Link href="/calls" className="rounded-full border px-4 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900">All calls</Link>
+          <Link href="/progress" className="rounded-full border px-4 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900">Progress</Link>
         </nav>
       </header>
 

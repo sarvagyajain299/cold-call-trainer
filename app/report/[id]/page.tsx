@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import type { StoredReport } from "@/lib/scoring";
 import { usageForSession } from "@/lib/usage";
+import { personaKey } from "@/lib/people";
+import { buildComparison, findPrevious, type Comparison } from "@/lib/compare";
 import { GenerateReport } from "@/components/GenerateReport";
 import { ReportView } from "@/components/ReportView";
 
@@ -19,13 +21,36 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
 
   if (session.report) {
     const usage = await usageForSession(session.id);
+    const report = JSON.parse(session.report) as StoredReport;
+    let comparison: Comparison | undefined;
+    // Compare by when each call was scored (a session can be created days before its call).
+    const scored = db
+      .select()
+      .from(sessions)
+      .all()
+      .filter((x) => x.report)
+      .map((x) => ({ ...x, createdAt: (JSON.parse(x.report as string) as StoredReport).createdAt }));
+    const prev = findPrevious({ id: session.id, createdAt: report.createdAt, persona: session.persona }, scored, personaKey);
+    if (prev) {
+      comparison = buildComparison({
+        cur: report,
+        prev: JSON.parse(prev.report as string) as StoredReport,
+        prevSessionId: prev.id,
+        prevCreatedAt: prev.createdAt,
+        curDifficulty: session.difficulty,
+        prevDifficulty: prev.difficulty,
+        curPresetId: session.presetId,
+        prevPresetId: prev.presetId,
+      });
+    }
     return (
       <>
         <ReportView
           sessionId={session.id}
           projectName={preset?.name ?? ""}
           callGoal={preset?.callGoal ?? ""}
-          report={JSON.parse(session.report) as StoredReport}
+          report={report}
+          comparison={comparison}
         />
         {usage.rows.length > 0 && (
           <p className="text-xs text-zinc-500">

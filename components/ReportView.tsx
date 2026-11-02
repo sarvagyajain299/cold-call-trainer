@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 import type { StoredReport } from "@/lib/scoring";
 import { redoCall } from "@/lib/actions";
 import { HABITS } from "@/lib/habits";
+import type { Comparison } from "@/lib/compare";
 import {
   buildTimeline,
   firstSentence,
@@ -132,6 +134,46 @@ function ScoreBar({ label, score, note }: { label: string; score: number; note?:
   );
 }
 
+const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+
+function fmtVal(v: number, unit: string) {
+  return unit === "/10" || unit === "/100" ? `${v}` : `${v}${unit}`;
+}
+
+/** Changes since the last call with the same person. Only real changes get an arrow. */
+function CompareBlock({ c }: { c: Comparison }) {
+  const real = c.changes.filter((x) => x.direction !== "same");
+  const better = real.filter((x) => x.good);
+  const worse = real.filter((x) => !x.good);
+  const chip = (x: (typeof real)[number]) => (
+    <li
+      key={x.key}
+      className={`rounded-full border px-3 py-1 text-xs ${x.good ? "border-green-300 text-green-700 dark:border-green-900 dark:text-green-400" : "border-red-300 text-red-700 dark:border-red-900 dark:text-red-400"}`}
+    >
+      {x.label} {fmtVal(x.prev, x.unit)} → {fmtVal(x.cur, x.unit)} {x.direction === "up" ? "▲" : "▼"}
+    </li>
+  );
+  return (
+    <section className="rounded-lg border p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        Vs your last call with {c.name} ({when.format(c.prevCreatedAt)})
+      </p>
+      {real.length === 0 ? (
+        <p className="mt-2 text-sm">No real change in any score. Differences under about a point are normal scoring noise.</p>
+      ) : (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {better.map(chip)}
+          {worse.map(chip)}
+        </ul>
+      )}
+      {c.cautions.map((n) => <p key={n} className="mt-2 text-xs text-amber-600 dark:text-amber-400">{n}</p>)}
+      <p className="mt-2 text-xs text-zinc-500">
+        {c.changes.length - real.length} other scores moved less than normal noise. <Link className="underline" href={`/report/${c.prevSessionId}`}>Open that scorecard</Link>
+      </p>
+    </section>
+  );
+}
+
 const SECTION_IDS = ["worked", "fixes", "timeline", "scores", "voice", "self", "who", "transcript"] as const;
 
 export function ReportView({
@@ -139,11 +181,13 @@ export function ReportView({
   projectName,
   callGoal,
   report,
+  comparison,
 }: {
   sessionId: string;
   projectName: string;
   callGoal: string;
   report: StoredReport;
+  comparison?: Comparison;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const { analysis: a, meta, metrics } = report;
@@ -248,6 +292,9 @@ export function ReportView({
           <p className="mt-1 text-xs text-zinc-500">Same person, same mood and situation. They will not remember this call.</p>
         </form>
       </section>
+
+
+      {comparison && <CompareBlock c={comparison} />}
 
       {report.hasRecording && (
         <div>
