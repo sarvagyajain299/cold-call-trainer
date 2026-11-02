@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, PERSONA_MODEL } from "@/lib/anthropic";
+import { logUsage } from "@/lib/usage";
 import type { Preset } from "@/db/schema";
 
 export type Difficulty = "easy" | "realistic" | "brutal";
@@ -122,6 +123,7 @@ export async function generatePersona(args: {
   difficulty: Difficulty;
   dials: Dials;
   recent: PastPersona[];
+  sessionId?: string;
 }): Promise<Persona> {
   const { preset, profile, difficulty, dials, recent } = args;
 
@@ -155,6 +157,7 @@ Create the prospect.`;
     messages: [{ role: "user", content: user }],
     output_config: { effort: "low", format: zodOutputFormat(personaSchema) },
   });
+  await logUsage(args.sessionId ?? null, "persona", PERSONA_MODEL, res.usage);
 
   if (res.stop_reason === "refusal" || !res.parsed_output) {
     throw new Error("Persona generation did not return a valid prospect");

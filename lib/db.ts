@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import path from "node:path";
 import * as schema from "@/db/schema";
 
-const sqlite = new Database(path.join(process.cwd(), "trainer.db"));
+export const sqlite = new Database(path.join(process.cwd(), "trainer.db"));
 sqlite.pragma("journal_mode = WAL");
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS presets (
@@ -24,6 +24,18 @@ sqlite.exec(`
     conversation_id TEXT,
     status TEXT NOT NULL DEFAULT 'setup',
     report TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS llm_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    kind TEXT NOT NULL,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+    cost_usd REAL NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
   );
 `);

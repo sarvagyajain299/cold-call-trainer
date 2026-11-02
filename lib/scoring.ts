@@ -106,6 +106,7 @@ async function buildAndSave(sessionId: string): Promise<void> {
     });
 
   const raw = await analyzeCall({
+    sessionId,
     preset,
     profile: session.profile,
     persona,

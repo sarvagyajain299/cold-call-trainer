@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import type { StoredReport } from "@/lib/scoring";
+import { usageForSession } from "@/lib/usage";
 import { GenerateReport } from "@/components/GenerateReport";
 import { ReportView } from "@/components/ReportView";
 
@@ -17,13 +18,25 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   const preset = db.select().from(presets).where(eq(presets.id, session.presetId)).get();
 
   if (session.report) {
+    const usage = await usageForSession(session.id);
     return (
-      <ReportView
-        sessionId={session.id}
-        projectName={preset?.name ?? ""}
-        callGoal={preset?.callGoal ?? ""}
-        report={JSON.parse(session.report) as StoredReport}
-      />
+      <>
+        <ReportView
+          sessionId={session.id}
+          projectName={preset?.name ?? ""}
+          callGoal={preset?.callGoal ?? ""}
+          report={JSON.parse(session.report) as StoredReport}
+        />
+        {usage.rows.length > 0 && (
+          <p className="text-xs text-zinc-500">
+            AI cost for this call: ${usage.total.toFixed(2)} (
+            {usage.rows
+              .map((r) => `${r.kind.replace("_", " ")} ${r.input.toLocaleString()} in / ${r.output.toLocaleString()} out`)
+              .join("; ")}
+            ). Voice minutes are billed separately by ElevenLabs.
+          </p>
+        )}
+      </>
     );
   }
 

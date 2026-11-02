@@ -44,6 +44,7 @@ async function ensurePersona(sessionId: string): Promise<{ ok: true } | { ok: fa
         difficulty,
         dials: rollDials(difficulty),
         recent,
+        sessionId,
       });
       db.update(sessions).set({ persona: JSON.stringify(persona) }).where(eq(sessions.id, sessionId)).run();
     })().finally(() => inFlight.delete(sessionId));

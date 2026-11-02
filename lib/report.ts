@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, PERSONA_MODEL } from "@/lib/anthropic";
+import { logUsage } from "@/lib/usage";
 import { RUBRIC, SCORING_GUIDE } from "@/lib/rubric";
 import { formatTranscript, type Turn } from "@/lib/transcript";
 import { keepVerified } from "@/lib/reportVerify";
@@ -149,6 +150,7 @@ ${RUBRIC}
 ${SCORING_GUIDE}`;
 
 export type ReportInput = {
+  sessionId?: string;
   preset: Preset;
   profile: string;
   persona: Persona;
@@ -204,7 +206,12 @@ Per trainee turn: ${input.perTurn.map((p) => `${p.t}s ${p.wpm}wpm/${p.words}w${p
 ${input.selfReview?.trim() || "(none given)"}`;
 }
 
-async function ask<S extends z.ZodType>(schema: S, context: string, task: string): Promise<z.infer<S>> {
+async function ask<S extends z.ZodType>(
+  schema: S,
+  context: string,
+  task: string,
+  meter: { sessionId: string | null; kind: string },
+): Promise<z.infer<S>> {
   const res = await anthropic.messages.parse({
     model: PERSONA_MODEL,
     max_tokens: 12000,
@@ -212,6 +219,7 @@ async function ask<S extends z.ZodType>(schema: S, context: string, task: string
     messages: [{ role: "user", content: `${context}\n\n# Your task\n${task}` }],
     output_config: { effort: "high", format: zodOutputFormat(schema) },
   });
+  await logUsage(meter.sessionId, meter.kind, PERSONA_MODEL, res.usage);
   if (res.stop_reason === "refusal" || !res.parsed_output) {
     throw new Error("The coach did not return a valid report");
   }
@@ -226,11 +234,13 @@ export async function analyzeCall(input: ReportInput): Promise<Analysis> {
       verdictSchema,
       context,
       "Give the verdict: ratings, conversion score, what worked, the three most important fixes, ONE focus for the next call, the six stage scores, goal clarity, call control and cultural fit. Include feedback on the trainee's own review if one was given.",
+      { sessionId: input.sessionId ?? null, kind: "report_verdict" },
     ),
     ask(
       evidenceSchema,
       context,
       "Give the evidence: the most instructive moments (each with an exact quote), every objection and how it was handled, any buying signals that were missed, the voice assessment (blend the measurements and the listener's notes), and the reveal of who the prospect really was and how they felt. Quotes must be copied exactly from the transcript.",
+      { sessionId: input.sessionId ?? null, kind: "report_evidence" },
     ),
   ]);
 
