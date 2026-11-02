@@ -2,6 +2,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, PERSONA_MODEL } from "@/lib/anthropic";
 import { logUsage } from "@/lib/usage";
+import { HABIT_INSTRUCTION, normalizeTag } from "@/lib/habits";
 import { RUBRIC, SCORING_GUIDE } from "@/lib/rubric";
 import { formatTranscript, type Turn } from "@/lib/transcript";
 import { keepVerified } from "@/lib/reportVerify";
@@ -30,6 +31,8 @@ export const verdictSchema = z.object({
         fix: z.string(),
         why: z.string(),
         howToPractice: z.string().describe("A concrete drill to try on the next call"),
+        oneLine: z.string().describe("Plain summary, at most 15 words"),
+        tag: z.string().describe("Habit id from the list in the task"),
       }),
     )
     .describe("Exactly three, most important first"),
@@ -66,6 +69,8 @@ export const evidenceSchema = z.object({
         what: z.string(),
         why: z.string(),
         betterLine: z.string().describe("For a miss: what a top closer would have said instead. Empty string for a win."),
+        oneLine: z.string().describe("Plain summary, at most 15 words"),
+        tag: z.string().describe("Habit id from the list in the task for a miss; empty string for a win"),
       }),
     )
     .describe("The 6 to 12 most instructive moments in time order"),
@@ -77,6 +82,8 @@ export const evidenceSchema = z.object({
       howHandled: z.string(),
       score: z.number().describe("0-10"),
       betterResponse: z.string(),
+      oneLine: z.string().describe("Plain summary, at most 15 words"),
+      tag: z.string().describe("Habit id from the list in the task"),
     }),
   ),
   missedSignals: z.array(
@@ -85,6 +92,8 @@ export const evidenceSchema = z.object({
       quote: z.string().describe("EXACT prospect words that signalled a pain, interest or opening"),
       meaning: z.string(),
       whatToDo: z.string(),
+      oneLine: z.string().describe("Plain summary, at most 15 words"),
+      tag: z.string().describe("Habit id from the list in the task"),
     }),
   ),
   voice: z.object({
@@ -118,7 +127,10 @@ export function clampScores(a: Analysis): Analysis {
     stages: a.stages.map((s) => ({ ...s, score: clamp(s.score, 0, 10) })),
     goalClarity: { ...a.goalClarity, score: clamp(a.goalClarity.score, 0, 10) },
     callControl: { ...a.callControl, score: clamp(a.callControl.score, 0, 10) },
-    objections: a.objections.map((o) => ({ ...o, score: clamp(o.score, 0, 10) })),
+    objections: a.objections.map((o) => ({ ...o, score: clamp(o.score, 0, 10), tag: normalizeTag(o.tag) })),
+    moments: a.moments.map((m) => ({ ...m, tag: normalizeTag(m.tag) })),
+    missedSignals: a.missedSignals.map((s) => ({ ...s, tag: normalizeTag(s.tag) })),
+    topFixes: a.topFixes.map((f) => ({ ...f, tag: normalizeTag(f.tag) })),
     voice: {
       ...a.voice,
       energy: clamp(a.voice.energy, 0, 10),
@@ -233,13 +245,13 @@ export async function analyzeCall(input: ReportInput): Promise<Analysis> {
     ask(
       verdictSchema,
       context,
-      "Give the verdict: ratings, conversion score, what worked, the three most important fixes, ONE focus for the next call, the six stage scores, goal clarity, call control and cultural fit. Include feedback on the trainee's own review if one was given.",
+      "Give the verdict: ratings, conversion score, what worked, the three most important fixes, ONE focus for the next call, the six stage scores, goal clarity, call control and cultural fit. Include feedback on the trainee's own review if one was given. " + HABIT_INSTRUCTION,
       { sessionId: input.sessionId ?? null, kind: "report_verdict" },
     ),
     ask(
       evidenceSchema,
       context,
-      "Give the evidence: the most instructive moments (each with an exact quote), every objection and how it was handled, any buying signals that were missed, the voice assessment (blend the measurements and the listener's notes), and the reveal of who the prospect really was and how they felt. Quotes must be copied exactly from the transcript.",
+      "Give the evidence: the most instructive moments (each with an exact quote), every objection and how it was handled, any buying signals that were missed, the voice assessment (blend the measurements and the listener's notes), and the reveal of who the prospect really was and how they felt. Quotes must be copied exactly from the transcript. " + HABIT_INSTRUCTION,
       { sessionId: input.sessionId ?? null, kind: "report_evidence" },
     ),
   ]);
