@@ -26,6 +26,12 @@ sqlite.exec(`
     report TEXT,
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS cheat_sheets (
+    preset_id TEXT PRIMARY KEY,
+    sections TEXT NOT NULL,
+    generated_at INTEGER,
+    updated_at INTEGER NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS llm_usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id TEXT,
@@ -43,6 +49,12 @@ sqlite.exec(`
 // Columns added after the first release.
 try {
   sqlite.exec('ALTER TABLE sessions ADD COLUMN self_review TEXT');
+} catch {
+  // column already exists
+}
+
+try {
+  sqlite.exec("ALTER TABLE sessions ADD COLUMN sheet_shown INTEGER");
 } catch {
   // column already exists
 }

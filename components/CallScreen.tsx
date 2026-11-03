@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PitchDetector } from "pitchy";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CheatPanel, usePanelPref, type PanelData } from "@/components/CheatPanel";
 import {
   ConversationProvider,
   useConversationControls,
@@ -18,6 +19,7 @@ type Props = {
   presetName: string;
   callGoal: string;
   profile: string;
+  sheet: PanelData;
 };
 
 type Prepared = {
@@ -77,6 +79,13 @@ export function CallScreen(props: Props) {
   const finished = useRef(false);
   const voiceSamples = useRef<VoiceSample[]>([]);
   const stopSampler = useRef<(() => void) | null>(null);
+  const [panelVisible, setPanelVisible] = usePanelPref();
+  const sheetShown = useRef(false);
+
+  // Remember whether the cheat sheet was on screen at any point while the call was live.
+  useEffect(() => {
+    if (phase === "live" && panelVisible) sheetShown.current = true;
+  }, [phase, panelVisible]);
 
   const releaseMic = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop());
@@ -117,7 +126,7 @@ export function CallScreen(props: Props) {
         await fetch(`/api/call/${props.sessionId}/end`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId: conversationId.current }),
+          body: JSON.stringify({ conversationId: conversationId.current, sheetShown: sheetShown.current }),
         });
       }
     } catch (err) {
@@ -201,6 +210,8 @@ export function CallScreen(props: Props) {
         error={error}
         prep={prep}
         lineUsed={lineUsed}
+        panelVisible={panelVisible}
+        onPanelToggle={setPanelVisible}
         onRetryPrepare={prepare}
         onPreparing={async () => {
           setError(null);
@@ -245,6 +256,8 @@ type BodyProps = Props & {
   error: string | null;
   prep: "loading" | "ready" | "failed";
   lineUsed: boolean;
+  panelVisible: boolean;
+  onPanelToggle: (v: boolean) => void;
   onRetryPrepare: () => void;
   onPreparing: () => Promise<Prepared | null>;
   onFailed: (msg: string) => void;
@@ -303,6 +316,9 @@ function CallBody({
   error,
   prep,
   lineUsed,
+  panelVisible,
+  onPanelToggle,
+  sheet,
   onRetryPrepare,
   profile,
   presetName,
@@ -330,7 +346,8 @@ function CallBody({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 lg:flex-row lg:items-start lg:justify-center">
+    <main className="flex w-full max-w-xl flex-col gap-6">
       <header>
         <p className="text-sm text-zinc-500">{presetName}</p>
         <h1 className="text-2xl font-semibold">Cold call</h1>
@@ -395,5 +412,7 @@ function CallBody({
         </div>
       )}
     </main>
+    <CheatPanel data={sheet} profile={profile} visible={panelVisible} onToggle={onPanelToggle} />
+    </div>
   );
 }

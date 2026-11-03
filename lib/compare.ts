@@ -1,7 +1,10 @@
 // Free comparisons between scorecards. Pure code, no AI.
-// An arrow is only shown for a REAL change: at least `step` in the metric's own units. The steps below are
-// provisional (about one point on a 0-10 scale). Phase 3's variance test (re-scoring one call twice)
-// decides whether they need to be wider.
+// An arrow is only shown for a REAL change: at least `step` in the metric's own units.
+// Variance test (2026-11-03): one call (Ahmed, second call) was scored three times by the coach. Every
+// coach score on the 0-10 scale moved by up to 1 point between runs (rating by 0.5, chance of the goal
+// by 0), so stage scores, goal clarity and call control need a change of 2 before an arrow shows.
+// Measured values (pace, clear words, fillers ...) come from the recording and do not vary between runs.
+// Small sample (one call): revisit after more calls.
 
 import type { StoredReport } from "@/lib/scoring";
 
@@ -25,7 +28,7 @@ const stage = (key: string, label: string): MetricDef => ({
   key: `stage_${key}`,
   label,
   group: "stages",
-  step: 1,
+  step: 2,
   better: "higher",
   unit: "/10",
   get: (r) => r.analysis.stages.find((s) => s.stage === key)?.score ?? null,
@@ -40,8 +43,8 @@ export const METRICS: MetricDef[] = [
   stage("value_pitch", "Value pitch"),
   stage("objection_handling", "Objection handling"),
   stage("close", "Close / next step"),
-  { key: "goal_clarity", label: "Clarity of the goal", group: "stages", step: 1, better: "higher", unit: "/10", get: (r) => r.analysis.goalClarity.score },
-  { key: "call_control", label: "Call control", group: "stages", step: 1, better: "higher", unit: "/10", get: (r) => r.analysis.callControl.score },
+  { key: "goal_clarity", label: "Clarity of the goal", group: "stages", step: 2, better: "higher", unit: "/10", get: (r) => r.analysis.goalClarity.score },
+  { key: "call_control", label: "Call control", group: "stages", step: 2, better: "higher", unit: "/10", get: (r) => r.analysis.callControl.score },
   { key: "energy", label: "Energy", group: "voice", step: 1, better: "higher", unit: "/10", get: (r) => r.analysis.voice.energy },
   { key: "confidence", label: "Confidence", group: "voice", step: 1, better: "higher", unit: "/10", get: (r) => r.analysis.voice.confidence },
   { key: "warmth", label: "Warmth", group: "voice", step: 1, better: "higher", unit: "/10", get: (r) => r.analysis.voice.warmth },

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import { CallScreen } from "@/components/CallScreen";
+import { getPersonal, getSheet } from "@/lib/sheetData";
 
 async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,12 +15,14 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   const preset = db.select().from(presets).where(eq(presets.id, session.presetId)).get();
   if (!preset) notFound();
 
+  const sheet = getSheet(preset.id);
   return (
     <CallScreen
       sessionId={session.id}
       presetName={preset.name}
       callGoal={preset.callGoal}
       profile={session.profile}
+      sheet={{ presetId: preset.id, sections: sheet.sections, generated: sheet.generatedAt !== null, personal: getPersonal() }}
     />
   );
 }

@@ -20,7 +20,16 @@ export const sessions = sqliteTable("sessions", {
   status: text("status").notNull().default("setup"), // setup | live | scoring | done
   report: text("report"), // JSON
   selfReview: text("self_review"),
+  // Was the cheat sheet panel visible during the call? null = no sheet existed or not recorded.
+  sheetShown: integer("sheet_shown"),
   createdAt: integer("created_at").notNull(),
+});
+
+export const cheatSheets = sqliteTable("cheat_sheets", {
+  presetId: text("preset_id").primaryKey(),
+  sections: text("sections").notNull(), // JSON: [{ id, title, lines: string[] }]
+  generatedAt: integer("generated_at"),
+  updatedAt: integer("updated_at").notNull(),
 });
 
 export type Preset = typeof presets.$inferSelect;

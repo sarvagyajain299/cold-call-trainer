@@ -25,12 +25,17 @@ async function Projects() {
             <p className="font-medium">{p.name}</p>
             <p className="line-clamp-1 text-sm text-zinc-500">{p.offer}</p>
           </div>
-          <Link
-            href={`/session/new?preset=${p.id}`}
-            className="rounded-full bg-foreground px-4 py-1.5 text-sm text-background"
-          >
-            Start a call
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/cheatsheet/${p.id}`} className="rounded-full border px-4 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900">
+              Cheat sheet
+            </Link>
+            <Link
+              href={`/session/new?preset=${p.id}`}
+              className="rounded-full bg-foreground px-4 py-1.5 text-sm text-background"
+            >
+              Start a call
+            </Link>
+          </div>
         </li>
       ))}
     </ul>

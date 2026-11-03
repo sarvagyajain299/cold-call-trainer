@@ -2,6 +2,7 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, PERSONA_MODEL } from "@/lib/anthropic";
 import { logUsage } from "@/lib/usage";
+import { finalizeFocusCheck, type History } from "@/lib/history";
 import { HABIT_INSTRUCTION, normalizeTag } from "@/lib/habits";
 import { RUBRIC, SCORING_GUIDE } from "@/lib/rubric";
 import { formatTranscript, type Turn } from "@/lib/transcript";
@@ -55,6 +56,15 @@ export const verdictSchema = z.object({
   selfReviewFeedback: z
     .string()
     .describe("Compare the trainee's own review with reality. If none was given, return an empty string."),
+  lastFocusCheck: z.object({
+    focus: z.string().describe("The focus the trainee was given after their previous call, copied from the history; empty if there is no history"),
+    verdict: z
+      .enum(["followed", "partly", "not_followed", "no_previous"])
+      .describe("Did the trainee act on that focus in THIS call? no_previous if there is no history"),
+    evidenceQuote: z.string().describe("EXACT words from THIS transcript that show it; empty if none or no history"),
+    evidenceTimeSecs: z.number().describe("Seconds into the call of that quote; 0 if none"),
+    comment: z.string().describe("One or two sentences on what they did or did not do about that focus; empty if no history"),
+  }),
 });
 
 // Call 2: the evidence, the voice and the reveal of who the prospect was.
@@ -163,6 +173,8 @@ ${SCORING_GUIDE}`;
 
 export type ReportInput = {
   sessionId?: string;
+  /** Built by code from earlier scorecards; only the verdict call sees it. */
+  history?: History | null;
   preset: Preset;
   profile: string;
   persona: Persona;
@@ -240,12 +252,19 @@ async function ask<S extends z.ZodType>(
 
 export async function analyzeCall(input: ReportInput): Promise<Analysis> {
   const context = buildContext(input);
+  const verdictContext = input.history ? `${context}
+
+${input.history.text}` : context;
 
   const [verdict, evidence] = await Promise.all([
     ask(
       verdictSchema,
-      context,
-      "Give the verdict: ratings, conversion score, what worked, the three most important fixes, ONE focus for the next call, the six stage scores, goal clarity, call control and cultural fit. Include feedback on the trainee's own review if one was given. " + HABIT_INSTRUCTION,
+      verdictContext,
+      "Give the verdict: ratings, conversion score, what worked, the three most important fixes, ONE focus for the next call, the six stage scores, goal clarity, call control and cultural fit. Include feedback on the trainee's own review if one was given. " +
+        (input.history
+          ? "Also fill lastFocusCheck: did the trainee act on the focus they were given after their previous call? Cite an exact quote from THIS transcript. Choose this call's focus so it builds on the recurring habits and the trainee's real progress; do not repeat a focus they have clearly achieved. "
+          : "There is no earlier call, so set lastFocusCheck to verdict no_previous with empty strings and a time of 0. ") +
+        HABIT_INSTRUCTION,
       { sessionId: input.sessionId ?? null, kind: "report_verdict" },
     ),
     ask(
@@ -256,5 +275,6 @@ export async function analyzeCall(input: ReportInput): Promise<Analysis> {
     ),
   ]);
 
-  return clampScores({ ...verdict, ...evidence });
+  const lastFocusCheck = finalizeFocusCheck(verdict.lastFocusCheck, input.history ?? null, input.turns);
+  return clampScores({ ...verdict, lastFocusCheck, ...evidence });
 }

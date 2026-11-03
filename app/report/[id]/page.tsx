@@ -51,6 +51,7 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
           callGoal={preset?.callGoal ?? ""}
           report={report}
           comparison={comparison}
+          sheetShown={session.sheetShown === null ? null : session.sheetShown === 1}
         />
         {usage.rows.length > 0 && (
           <p className="text-xs text-zinc-500">

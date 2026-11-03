@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { sessions } from "@/db/schema";
 
-const body = z.object({ conversationId: z.string().min(1) });
+const body = z.object({ conversationId: z.string().min(1), sheetShown: z.boolean().optional() });
 
 export async function POST(request: Request, ctx: RouteContext<"/api/call/[id]/end">) {
   const { id } = await ctx.params;
@@ -12,7 +12,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/call/[id]/e
 
   const result = db
     .update(sessions)
-    .set({ conversationId: parsed.data.conversationId, status: "scoring" })
+    .set({
+      conversationId: parsed.data.conversationId,
+      status: "scoring",
+      ...(parsed.data.sheetShown === undefined ? {} : { sheetShown: parsed.data.sheetShown ? 1 : 0 }),
+    })
     .where(eq(sessions.id, id))
     .run();
   if (result.changes === 0) return Response.json({ error: "Session not found" }, { status: 404 });

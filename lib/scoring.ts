@@ -10,6 +10,8 @@ import { analyzeTone, type Tone } from "@/lib/tone";
 import { summarizeSpeech, windowSpeech, type DgWord, type SpeechSummary } from "@/lib/speechMetrics";
 import { summarizeVoice, type VoiceSample, type VoiceSummary } from "@/lib/voiceMetrics";
 import { analyzeCall, verifyAnalysis, type Analysis } from "@/lib/report";
+import { buildHistory, type PriorCall } from "@/lib/history";
+import { personaKey } from "@/lib/people";
 
 export type StoredReport = {
   version: 1;
@@ -105,7 +107,28 @@ async function buildAndSave(sessionId: string): Promise<void> {
       return { t: turn.t, wpm: w.wpm, words: w.wordCount, lowConfidence: w.lowConfidenceWords.map((x) => x.word) };
     });
 
+  // Memory: only calls scored BEFORE this one. A re-score keeps its original time so history stays honest.
+  const existing = session.report ? (JSON.parse(session.report) as StoredReport) : null;
+  const scoredAt = existing?.createdAt ?? Date.now();
+  const earlier = db
+    .select()
+    .from(sessions)
+    .all()
+    .filter((x) => x.id !== session.id && x.report)
+    .map((x) => {
+      const report = JSON.parse(x.report as string) as StoredReport;
+      return { sessionId: x.id, createdAt: report.createdAt, difficulty: x.difficulty, report, persona: x.persona };
+    })
+    .filter((x) => x.createdAt < scoredAt)
+    .sort((a, b) => b.createdAt - a.createdAt);
+  const thisKey = personaKey(session.persona);
+  const history = buildHistory(
+    earlier as PriorCall[],
+    earlier.filter((x) => x.persona && personaKey(x.persona) === thisKey) as PriorCall[],
+  );
+
   const raw = await analyzeCall({
+    history,
     sessionId,
     preset,
     profile: session.profile,
@@ -125,7 +148,7 @@ async function buildAndSave(sessionId: string): Promise<void> {
   const prospectWords = wordCount(transcript.turns, "prospect");
   const report: StoredReport = {
     version: 1,
-    createdAt: Date.now(),
+    createdAt: scoredAt,
     analysis,
     persona,
     transcript: transcript.turns,

@@ -136,6 +136,39 @@ function ScoreBar({ label, score, note }: { label: string; score: number; note?:
 
 const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
 
+const FOCUS_VERDICT: Record<string, { label: string; style: string }> = {
+  followed: { label: "Followed", style: "text-green-600 dark:text-green-400" },
+  partly: { label: "Partly", style: "text-amber-600 dark:text-amber-400" },
+  not_followed: { label: "Not yet", style: "text-red-600 dark:text-red-400" },
+};
+
+/** Did you act on the focus you were given last time? Written by the coach, with a quote checked against the transcript. */
+function FocusCheckBlock({
+  check,
+  Play,
+}: {
+  check: NonNullable<StoredReport["analysis"]["lastFocusCheck"]>;
+  Play: (p: { at: number }) => ReactNode;
+}) {
+  const v = FOCUS_VERDICT[check.verdict];
+  if (!v) return null;
+  return (
+    <section className="rounded-lg border p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Did you follow last time&apos;s focus?</p>
+      <p className="mt-2 text-sm">
+        <span className={`font-semibold ${v.style}`}>{v.label}.</span> <span className="italic">{check.focus}</span>
+      </p>
+      {check.comment && <p className="mt-2 text-sm">{check.comment}</p>}
+      {check.evidenceQuote && (
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-sm italic">
+          <Play at={check.evidenceTimeSecs} />
+          <span>“{check.evidenceQuote}”</span>
+        </p>
+      )}
+    </section>
+  );
+}
+
 function fmtVal(v: number, unit: string) {
   return unit === "/10" || unit === "/100" ? `${v}` : `${v}${unit}`;
 }
@@ -182,12 +215,15 @@ export function ReportView({
   callGoal,
   report,
   comparison,
+  sheetShown,
 }: {
   sessionId: string;
   projectName: string;
   callGoal: string;
   report: StoredReport;
   comparison?: Comparison;
+  /** Was the cheat sheet on screen during this call? null if unknown. */
+  sheetShown?: boolean | null;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const { analysis: a, meta, metrics } = report;
@@ -272,6 +308,9 @@ export function ReportView({
           <div className="rounded-lg border p-3">
             <p className="text-base font-semibold leading-tight">{OUTCOMES[a.outcome] ?? a.outcome}</p>
             <p className="mt-1 text-xs text-zinc-500">{mmss(meta.durationSecs)} · you spoke {Math.round(meta.traineeWordShare * 100)}% of the words</p>
+            {sheetShown !== null && sheetShown !== undefined && (
+              <p className="mt-1 text-xs text-zinc-500">Cheat sheet {sheetShown ? "shown" : "hidden"} during this call</p>
+            )}
           </div>
         </div>
         <div>
@@ -294,6 +333,7 @@ export function ReportView({
       </section>
 
 
+      {a.lastFocusCheck && a.lastFocusCheck.verdict !== "no_previous" && <FocusCheckBlock check={a.lastFocusCheck} Play={Play} />}
       {comparison && <CompareBlock c={comparison} />}
 
       {report.hasRecording && (
