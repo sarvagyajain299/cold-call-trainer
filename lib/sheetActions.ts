@@ -51,3 +51,21 @@ export async function saveSheet(presetId: string, sections: { id: string; lines:
   revalidatePath(`/cheatsheet/${presetId}`);
   return { ok: true };
 }
+
+/** Adds one better line from a scorecard to the project's "My own lines" section. Free: no AI. */
+export async function addLine(presetId: string, text: string): Promise<SheetResult> {
+  const line = text.replace(/\s+/g, " ").trim();
+  if (!line) return { error: "Nothing to save." };
+  if (line.length > 500) return { error: "That line is too long for the cheat sheet." };
+  if (!db.select().from(presets).where(eq(presets.id, presetId)).get()) return { error: "Project not found" };
+
+  const sections = getSheet(presetId).sections;
+  const notes = sections.find((s) => s.id === "notes");
+  if (!notes) return { error: "Could not find your notes section." };
+  if (notes.lines.includes(line)) return { ok: true };
+  if (notes.lines.length >= 60) return { error: "Your own lines section is full. Remove some first." };
+
+  write(presetId, sections.map((s) => (s.id === "notes" ? { ...s, lines: [...s.lines, line] } : s)), false);
+  revalidatePath(`/cheatsheet/${presetId}`);
+  return { ok: true };
+}

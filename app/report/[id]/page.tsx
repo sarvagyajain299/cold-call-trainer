@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import type { StoredReport } from "@/lib/scoring";
 import { usageForSession } from "@/lib/usage";
+import { getSheet } from "@/lib/sheetData";
 import { personaKey } from "@/lib/people";
 import { buildComparison, findPrevious, type Comparison } from "@/lib/compare";
 import { GenerateReport } from "@/components/GenerateReport";
@@ -51,6 +52,8 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
           callGoal={preset?.callGoal ?? ""}
           report={report}
           comparison={comparison}
+          presetId={session.presetId}
+          savedLines={getSheet(session.presetId).sections.find((x) => x.id === "notes")?.lines ?? []}
           sheetShown={session.sheetShown === null ? null : session.sheetShown === 1}
         />
         {usage.rows.length > 0 && (

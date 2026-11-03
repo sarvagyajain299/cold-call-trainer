@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, useTransition, type ReactNode } from "react";
+import { addLine } from "@/lib/sheetActions";
 import type { StoredReport } from "@/lib/scoring";
 import { redoCall } from "@/lib/actions";
 import { HABITS } from "@/lib/habits";
@@ -216,6 +217,8 @@ export function ReportView({
   report,
   comparison,
   sheetShown,
+  presetId,
+  savedLines = [],
 }: {
   sessionId: string;
   projectName: string;
@@ -224,6 +227,9 @@ export function ReportView({
   comparison?: Comparison;
   /** Was the cheat sheet on screen during this call? null if unknown. */
   sheetShown?: boolean | null;
+  presetId?: string;
+  /** Lines already in the project cheat sheet's "My own lines". */
+  savedLines?: string[];
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const { analysis: a, meta, metrics } = report;
@@ -231,6 +237,17 @@ export function ReportView({
   const [filters, setFilters] = useState<Set<TimelineType>>(new Set(CHIPS.map((c) => c.type)));
   const [openRows, setOpenRows] = useState<Set<string>>(new Set());
   const [showWhy, setShowWhy] = useState(false);
+  const [saved, setSaved] = useState<Set<string>>(new Set(savedLines));
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, startSave] = useTransition();
+  const norm = (t: string) => t.replace(/\s+/g, " ").trim();
+  const saveLine = (text: string) =>
+    startSave(async () => {
+      setSaveError(null);
+      const res = await addLine(presetId as string, text);
+      if (res.error) return setSaveError(res.error);
+      setSaved((prev) => new Set(prev).add(norm(text)));
+    });
 
   const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   const allOpen = SECTION_IDS.every((id) => open[id]);
@@ -440,6 +457,22 @@ export function ReportView({
                       <div className="rounded bg-zinc-100 p-2 dark:bg-zinc-900">
                         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t.better.label}</p>
                         <p>{t.better.text}</p>
+                        {presetId && (
+                          saved.has(norm(t.better.text)) ? (
+                            <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                              Saved to your cheat sheet. <Link href={`/cheatsheet/${presetId}`} className="underline">Open it</Link>
+                            </p>
+                          ) : (
+                            <button
+                              onClick={() => saveLine((t.better as { text: string }).text)}
+                              disabled={saving}
+                              className="mt-2 rounded-full border px-3 py-1 text-xs hover:bg-zinc-200 disabled:opacity-50 dark:hover:bg-zinc-800"
+                            >
+                              Save to my cheat sheet
+                            </button>
+                          )
+                        )}
+                        {saveError && <p className="mt-1 text-xs text-red-600">{saveError}</p>}
                       </div>
                     )}
                   </div>
