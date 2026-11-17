@@ -33,6 +33,28 @@ Cold Call Trainer is a **voice-first practice arena** that runs on your laptop.
 
 > You don't see who you called until the report. Just like the real thing.
 
+## Screenshots
+
+<div align="center">
+
+**Home: your projects and recent calls**
+
+<img src="docs/screenshots/home.png" alt="Home screen with projects and recent calls" width="720">
+
+**Save your offer once as a project**
+
+<img src="docs/screenshots/new-project.png" alt="New project form" width="720">
+
+**Describe a prospect, pick a difficulty, start the call**
+
+<img src="docs/screenshots/new-call.png" alt="New call form" width="720">
+
+**Track your progress across calls**
+
+<img src="docs/screenshots/progress.png" alt="Progress page with score trends per call stage" width="720">
+
+</div>
+
 ## What Makes It Different
 
 | | |
