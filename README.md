@@ -49,6 +49,10 @@ Cold Call Trainer is a **voice-first practice arena** that runs on your laptop.
 
 <img src="docs/screenshots/new-call.png" alt="New call form" width="720">
 
+**Pick up the phone: live voice call with your script beside you**
+
+<img src="docs/screenshots/live-call.png" alt="Live call screen with timer, hang up button and call script" width="720">
+
 **Hang up and read your scorecard**
 
 <img src="docs/screenshots/scorecard.png" alt="Scorecard with rating, chance of reaching the goal and focus for the next call" width="720">
