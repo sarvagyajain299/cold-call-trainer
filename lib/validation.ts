@@ -8,6 +8,11 @@ export const presetInput = z.object({
   callGoal: z.string().trim().min(3, "What should the call achieve?").max(300),
 });
 
+export const prospectTypeInput = z.object({
+  label: z.string().trim().min(1, "Give the type a short name").max(80, "Keep the name under 80 characters"),
+  profile: z.string().trim().min(20, "Add a bit more about the person (business, location, role)").max(4000),
+});
+
 export const difficulties = ["easy", "realistic", "brutal"] as const;
 
 export const sessionInput = z.object({

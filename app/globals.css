@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Lets the browser draw native controls (dropdown lists, scrollbars) in dark mode too. */
+  color-scheme: light dark;
+}
+
+/* Dropdown lists are drawn by the browser; give the options the page colours so text never vanishes. */
+select option {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 @theme inline {
@@ -29,6 +37,7 @@ body {
   :root {
     --background: #ffffff;
     --foreground: #000000;
+    color-scheme: light;
   }
   body {
     background: #ffffff;

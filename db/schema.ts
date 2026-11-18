@@ -34,5 +34,15 @@ export const cheatSheets = sqliteTable("cheat_sheets", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// Saved "who are you calling?" profiles for a project, picked from a dropdown on the new call form.
+export const prospectTypes = sqliteTable("prospect_types", {
+  id: text("id").primaryKey(),
+  presetId: text("preset_id").notNull(),
+  label: text("label").notNull(),
+  profile: text("profile").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type Preset = typeof presets.$inferSelect;
+export type ProspectType = typeof prospectTypes.$inferSelect;
 export type Session = typeof sessions.$inferSelect;

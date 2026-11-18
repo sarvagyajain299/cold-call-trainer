@@ -32,6 +32,13 @@ sqlite.exec(`
     generated_at INTEGER,
     updated_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS prospect_types (
+    id TEXT PRIMARY KEY,
+    preset_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    profile TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS llm_usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id TEXT,

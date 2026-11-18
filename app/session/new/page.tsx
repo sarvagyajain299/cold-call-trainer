@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { presets } from "@/db/schema";
+import { presets, prospectTypes } from "@/db/schema";
 import { SessionForm } from "@/components/SessionForm";
 
 async function Form({ searchParams }: { searchParams: Promise<{ preset?: string }> }) {
@@ -12,7 +12,9 @@ async function Form({ searchParams }: { searchParams: Promise<{ preset?: string 
   await connection();
   const all = db.select().from(presets).orderBy(desc(presets.createdAt)).all();
   if (all.length === 0) redirect("/presets/new");
-  return <SessionForm presets={all} selected={preset} />;
+  const types = db.select().from(prospectTypes).all();
+  // The key makes a fresh form for each project, so arriving from another project's page never keeps the old choice.
+  return <SessionForm key={preset ?? "none"} presets={all} types={types} selected={preset} />;
 }
 
 export default function NewSession({

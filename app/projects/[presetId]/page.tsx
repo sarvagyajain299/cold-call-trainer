@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { presets, sessions } from "@/db/schema";
+import { presets, prospectTypes, sessions } from "@/db/schema";
+import { ProspectTypes } from "@/components/ProspectTypes";
 import type { StoredReport } from "@/lib/scoring";
 import { getSheet } from "@/lib/sheetData";
 import { scriptBlanks } from "@/lib/sheetModel";
@@ -42,6 +43,7 @@ async function Loaded({ params }: { params: Promise<{ presetId: string }> }) {
     calls.flatMap(({ s, report }) => (report ? [{ createdAt: s.createdAt, rating: report.analysis.overallRating, focus: report.analysis.focusNextCall }] : [])),
   );
   const blanks = scriptBlanks(getSheet(presetId).sections);
+  const types = db.select().from(prospectTypes).where(eq(prospectTypes.presetId, presetId)).orderBy(asc(prospectTypes.createdAt)).all();
 
   return (
     <>
@@ -88,6 +90,11 @@ async function Loaded({ params }: { params: Promise<{ presetId: string }> }) {
             <Link href={`/cheatsheet/${preset.id}`} className="underline">Rehearse it</Link>
           </p>
         )}
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-medium">Prospect types</h2>
+        <ProspectTypes presetId={preset.id} types={types} />
       </section>
 
       <section className="flex flex-col gap-2">
