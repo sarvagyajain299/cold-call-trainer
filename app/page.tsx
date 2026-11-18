@@ -22,12 +22,12 @@ async function Projects() {
   return (
     <ul className="flex flex-col gap-2">
       {all.map((p) => (
-        <li key={p.id} className="flex items-center justify-between rounded-lg border p-4">
-          <Link href={`/projects/${p.id}`} className="min-w-0 hover:underline">
+        <li key={p.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+          <Link href={`/projects/${p.id}`} className="min-w-0 flex-1 hover:underline">
             <p className="font-medium">{p.name}</p>
             <p className="line-clamp-1 text-sm text-zinc-500">{p.offer}</p>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <Link href={`/cheatsheet/${p.id}`} className="rounded-full border px-4 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900">
               Script &amp; cheat sheet
             </Link>
