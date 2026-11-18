@@ -45,3 +45,7 @@ trainer.db*
 /recordings/
 dev.log
 *.stackdump
+
+# local research notes (not part of the app)
+/reports/
+/research_notes/

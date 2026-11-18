@@ -59,4 +59,10 @@ try {
   // column already exists
 }
 
+try {
+  sqlite.exec("ALTER TABLE sessions ADD COLUMN script_used TEXT");
+} catch {
+  // column already exists
+}
+
 export const db = drizzle(sqlite, { schema });

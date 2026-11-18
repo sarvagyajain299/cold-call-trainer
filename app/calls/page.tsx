@@ -15,7 +15,7 @@ const OUTCOMES: Record<string, string> = {
   ended_neutral: "Ended neutrally",
 };
 
-const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 function scoreColour(n: number) {
   if (n >= 7) return "text-green-600 dark:text-green-400";

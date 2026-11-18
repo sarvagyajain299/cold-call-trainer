@@ -20,9 +20,9 @@ async function Loaded({ params }: { params: Promise<{ presetId: string }> }) {
     <>
       <div>
         <p className="text-sm text-zinc-500">{preset.name} · goal: {preset.callGoal}</p>
-        <h1 className="text-2xl font-semibold">Cheat sheet</h1>
+        <h1 className="text-2xl font-semibold">Call script and cheat sheet</h1>
         <p className="mt-1 text-sm text-zinc-500 print:hidden">
-          Read it before the call. It also sits beside the call screen, and you can hide it there. It never shows anything about who you are about to call.
+          This belongs to this project only. Rehearse it before the call. It also sits beside the call screen, and you can hide it there. It never shows anything about who you are about to call.
         </p>
       </div>
       <SheetEditor presetId={presetId} initial={sheet.sections} generatedAt={sheet.generatedAt} personal={personal} />

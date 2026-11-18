@@ -10,7 +10,7 @@ Rules:
 - Plain words a busy owner understands on the first hearing. No jargon, no buzzwords.
 - Base everything on the offer you are given. Do NOT invent statistics, client names, case studies or results. If the offer text gives no proof, write a placeholder such as "Add a real result here".
 - The sheet is about the trainee's offer only. Never refer to any specific prospect.
-- For objections, "they" is the words the prospect says; "you" is a short reply that acknowledges first and then asks a question or moves forward.`;
+- For objections, "they" is the words the prospect says; "you" is a short reply that acknowledges first and then asks a question or moves forward. Do not start a reply with "sorry" or apologise for calling.`;
 
 export async function generateForPreset(preset: Preset): Promise<Generated> {
   const user = `Project: ${preset.name}

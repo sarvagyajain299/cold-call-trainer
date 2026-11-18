@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/anthropic", () => ({ anthropic: {}, PERSONA_MODEL: "test" }));
 
-import { applyGenerated, emptySheet, normalizeSheet, panelLines, SECTION_ORDER } from "@/lib/sheetModel";
+import { applyGenerated, emptySheet, normalizeSheet, objectionReplies, SCRIPT_ORDER, scriptBlanks, scriptSteps, SECTION_ORDER } from "@/lib/sheetModel";
 
 const gen = {
   reason: ["  Leads are lost after hours  ", ""],
@@ -36,11 +36,34 @@ describe("cheat sheet", () => {
     expect(out.map((s) => s.id)).toEqual([...SECTION_ORDER]);
   });
 
-  it("builds the in-call digest from the editable sheet", () => {
+  it("gives every project the 7 script steps, in call order", () => {
+    expect(scriptSteps(emptySheet()).map((s) => s.id)).toEqual([...SCRIPT_ORDER]);
+  });
+
+  it("adds the script template to a sheet saved before scripts existed, keeping its lines", () => {
+    const out = normalizeSheet([{ id: "ask", lines: ["old ask"] }]);
+    expect(out.find((s) => s.id === "ask")!.lines).toEqual(["old ask"]);
+    expect(scriptSteps(out)).toHaveLength(7);
+  });
+
+  it("never overwrites the script when offer sections are regenerated", () => {
+    const sheet = emptySheet().map((s) => (s.id === "script_pitch" ? { ...s, lines: ["My own words."] } : s));
+    expect(applyGenerated(sheet, gen).find((s) => s.id === "script_pitch")!.lines).toEqual(["My own words."]);
+  });
+
+  it("lists brackets still to fill, but not the ones said live on the call", () => {
+    const blanks = scriptBlanks(emptySheet());
+    expect(blanks).toContain("Company");
+    expect(blanks).not.toContain("Name");
+    expect(blanks).not.toContain("day and time");
+    const filled = emptySheet().map((s) => (s.id.startsWith("script_") ? { ...s, lines: ["Hi [Name], great."] } : s));
+    expect(scriptBlanks(filled)).toEqual([]);
+  });
+
+  it("splits objections into what they say and your reply", () => {
     const out = applyGenerated(emptySheet(), gen);
-    const lines = panelLines(out);
-    expect(lines.map((l) => l.label)).toEqual(["Opener", "Reason", "Ask"]);
-    expect(lines[2].text).toBe("Could we do 20 minutes Tuesday at 10?");
-    expect(panelLines(emptySheet()).map((l) => l.label)).toEqual(["Opener"]);
+    expect(objectionReplies(out)).toEqual([{ they: "Not interested", you: "Fair enough. Quick question first?" }]);
+    const plain = emptySheet().map((s) => (s.id === "objections" ? { ...s, lines: ["Just a reply"] } : s));
+    expect(objectionReplies(plain)).toEqual([{ they: "", you: "Just a reply" }]);
   });
 });

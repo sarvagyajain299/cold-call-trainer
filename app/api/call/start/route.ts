@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sessions } from "@/db/schema";
 import { buildAgentPrompt, type Difficulty, type Persona } from "@/lib/persona";
 import { pickVoice } from "@/lib/voices";
+import { getSheet } from "@/lib/sheetData";
 
 const body = z.object({ sessionId: z.string().min(1) });
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   // Only the call that flips setup -> live may proceed, so a double click cannot start two calls.
   const claimed = db
     .update(sessions)
-    .set({ status: "live" })
+    .set({ status: "live", scriptUsed: JSON.stringify(getSheet(session.presetId).sections) })
     .where(and(eq(sessions.id, session.id), eq(sessions.status, "setup")))
     .run();
   if (claimed.changes === 0) {

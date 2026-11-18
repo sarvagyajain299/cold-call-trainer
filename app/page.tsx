@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import type { StoredReport } from "@/lib/scoring";
 
+const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
 async function Projects() {
   await connection();
   const all = db.select().from(presets).orderBy(desc(presets.createdAt)).all();
@@ -21,13 +23,13 @@ async function Projects() {
     <ul className="flex flex-col gap-2">
       {all.map((p) => (
         <li key={p.id} className="flex items-center justify-between rounded-lg border p-4">
-          <div>
+          <Link href={`/projects/${p.id}`} className="min-w-0 hover:underline">
             <p className="font-medium">{p.name}</p>
             <p className="line-clamp-1 text-sm text-zinc-500">{p.offer}</p>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
             <Link href={`/cheatsheet/${p.id}`} className="rounded-full border px-4 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900">
-              Cheat sheet
+              Script &amp; cheat sheet
             </Link>
             <Link
               href={`/session/new?preset=${p.id}`}
@@ -56,7 +58,10 @@ async function RecentCalls() {
         return (
           <li key={s.id}>
             <Link href={href} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
-              <span className="line-clamp-1">{s.profile}</span>
+              <span className="min-w-0">
+                <span className="line-clamp-1">{s.profile}</span>
+                <span className="block text-xs text-zinc-500">{when.format(s.createdAt)}</span>
+              </span>
               <span className="shrink-0 text-zinc-500">
                 {s.difficulty} · {label}
               </span>

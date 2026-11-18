@@ -22,6 +22,8 @@ export const sessions = sqliteTable("sessions", {
   selfReview: text("self_review"),
   // Was the cheat sheet panel visible during the call? null = no sheet existed or not recorded.
   sheetShown: integer("sheet_shown"),
+  // JSON copy of the script and cheat sheet as they stood when this call started. null = older call.
+  scriptUsed: text("script_used"),
   createdAt: integer("created_at").notNull(),
 });
 

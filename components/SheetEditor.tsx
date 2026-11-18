@@ -45,7 +45,7 @@ export function SheetEditor({
   const generate = () => {
     const ok = window.confirm(
       generatedAt
-        ? "Regenerate the offer-specific sections? This replaces Reason, Questions, When they say, The ask and Proof, and costs about $0.10-0.15 in Anthropic credit. Your other sections and notes are kept."
+        ? "Regenerate the offer-specific sections? This replaces Reason, Questions, When they say, The ask and Proof, and costs about $0.10-0.15 in Anthropic credit. Your call script, other sections and notes are kept."
         : "Generate the offer-specific sections for this project? This costs about $0.10-0.15 in Anthropic credit and takes about 30 seconds.",
     );
     if (!ok) return;
@@ -73,13 +73,13 @@ export function SheetEditor({
 
       {!generatedAt && !editing && (
         <p className="rounded-lg border border-dashed p-3 text-sm text-zinc-500 print:hidden">
-          Only the generic parts are filled in so far (opener, where you are from, phrase swaps). Press &ldquo;Generate for this offer&rdquo; to add questions, objection replies, the ask and proof written for what you sell.
+          The script template and generic parts are ready to edit. Press &ldquo;Generate for this offer&rdquo; to add backup questions, objection replies, ask options and proof written for what you sell. It never changes your script.
         </p>
       )}
 
       {editing ? (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-zinc-500">One item per line. Keep it to keywords and short phrases. Empty lines are removed.</p>
+          <p className="text-sm text-zinc-500">One item per line. Script steps are your exact words; replace every [bracket] with a true fact, except [Name] and [day and time], which you say live. Everything else can be short prompts. Empty lines are removed.</p>
           {initial.map((s) => (
             <label key={s.id} className="flex flex-col gap-1">
               <span className="font-semibold">{s.title}</span>
