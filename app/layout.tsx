@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import HomeButton from "@/components/HomeButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* usePathname is request data; Cache Components needs it inside Suspense */}
+        <Suspense fallback={null}>
+          <HomeButton />
+        </Suspense>
         <ThemeToggle />
         {children}
       </body>

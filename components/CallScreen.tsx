@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CheatPanel, usePanelPref, type PanelData } from "@/components/CheatPanel";
 import { LeadCard } from "@/components/LeadCard";
 import type { LeadCard as Lead } from "@/lib/lead";
+import { LEAVE_REQUEST } from "@/lib/leaveGuard";
 import {
   ConversationProvider,
   useConversationControls,
@@ -63,7 +64,7 @@ function startVoiceSampler(stream: MediaStream, out: VoiceSample[]) {
 
   return () => {
     clearInterval(timer);
-    void ctx.close();
+    if (ctx.state !== "closed") void ctx.close().catch(() => undefined);
   };
 }
 
@@ -95,8 +96,10 @@ export function CallScreen(props: Props) {
     stream.current = null;
   }, []);
 
-  // Runs once per call, whether you hang up, the prospect hangs up, or the line drops.
-  const finish = useCallback(async () => {
+  // Runs once per call, whether you hang up, the prospect hangs up, the line drops, or you leave with Home.
+  // Every caller gets the same promise, so anyone can wait until the call is fully saved.
+  const finishing = useRef<Promise<void> | null>(null);
+  const saveCall = useCallback(async () => {
     if (finished.current) return;
     finished.current = true;
 
@@ -137,6 +140,7 @@ export function CallScreen(props: Props) {
     }
     setPhase("ended");
   }, [props.sessionId, releaseMic]);
+  const finish = useCallback((): Promise<void> => (finishing.current ??= saveCall()), [saveCall]);
 
   useEffect(() => {
     if (phase !== "live") return;
@@ -219,6 +223,7 @@ export function CallScreen(props: Props) {
         lineUsed={lineUsed}
         panelVisible={panelVisible}
         onPanelToggle={setPanelVisible}
+        onLeave={finish}
         onRetryPrepare={prepare}
         onPreparing={async () => {
           setError(null);
@@ -266,6 +271,7 @@ type BodyProps = Props & {
   lineUsed: boolean;
   panelVisible: boolean;
   onPanelToggle: (v: boolean) => void;
+  onLeave: () => Promise<void>;
   onRetryPrepare: () => void;
   onPreparing: () => Promise<Prepared | null>;
   onFailed: (msg: string) => void;
@@ -327,6 +333,7 @@ function CallBody({
   lineUsed,
   panelVisible,
   onPanelToggle,
+  onLeave,
   sheet,
   onRetryPrepare,
   profile,
@@ -338,6 +345,23 @@ function CallBody({
   const { startSession, endSession } = useConversationControls();
   const { status } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
+
+  // While dialling or on the call, the global Home button asks first, hangs up, waits for the save, then goes home.
+  const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    if (phase !== "connecting" && phase !== "live") return;
+    const onLeaveRequest = (e: Event) => {
+      e.preventDefault(); // tell the Home button not to navigate
+      if (leaving) return;
+      if (!window.confirm("Hang up and go home? The call will be saved first, but you will skip the self-review.")) return;
+      setLeaving(true);
+      endSession();
+      void onLeave().finally(() => router.push("/"));
+    };
+    window.addEventListener(LEAVE_REQUEST, onLeaveRequest);
+    return () => window.removeEventListener(LEAVE_REQUEST, onLeaveRequest);
+  }, [phase, leaving, endSession, onLeave, router]);
 
   const dial = async () => {
     const prepared = await onPreparing();
@@ -404,7 +428,7 @@ function CallBody({
         <div className="flex flex-col items-center gap-4">
           <p className="text-4xl font-semibold tabular-nums">{fmt(seconds)}</p>
           <p className="text-sm text-zinc-500" aria-live="polite">
-            {status !== "connected" ? "Connecting…" : isSpeaking ? "They are speaking" : "Listening to you"}
+            {leaving ? "Saving the call, then going home…" : status !== "connected" ? "Connecting…" : isSpeaking ? "They are speaking" : "Listening to you"}
           </p>
           <button onClick={() => endSession()} className="rounded-full bg-red-600 px-6 py-3 text-white">
             Hang up
