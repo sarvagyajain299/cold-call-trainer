@@ -1,10 +1,30 @@
 @import "tailwindcss";
 
+/* Theme is class-based: <html class="dark"> = night, no class = day.
+   A tiny script in layout.tsx sets it before first paint (saved choice, else the OS setting). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  /* Lets the browser draw native controls (dropdown lists, scrollbars) in dark mode too. */
-  color-scheme: light dark;
+  /* Day */
+  --background: #faf8f4;
+  --foreground: #1c1917;
+  --line: #e4ddd2;
+  color-scheme: light;
+}
+
+:root.dark {
+  /* Night (the original look) */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --line: #27272a;
+  color-scheme: dark;
+}
+
+/* Every plain `border` uses the theme line colour. */
+*,
+::before,
+::after {
+  border-color: var(--line);
 }
 
 /* Dropdown lists are drawn by the browser; give the options the page colours so text never vanishes. */
@@ -20,13 +40,6 @@ select option {
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -34,7 +47,8 @@ body {
 }
 
 @media print {
-  :root {
+  :root,
+  :root.dark {
     --background: #ffffff;
     --foreground: #000000;
     color-scheme: light;
