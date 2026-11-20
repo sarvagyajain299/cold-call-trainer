@@ -5,6 +5,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import type { StoredReport } from "@/lib/scoring";
+import { dueReviews } from "@/lib/lessons/store";
 
 const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -73,6 +74,23 @@ async function RecentCalls() {
   );
 }
 
+async function Reviews() {
+  await connection();
+  const due = dueReviews();
+  if (due.length === 0) return null;
+  return (
+    <Link href={`/review/${due[0].lessonId}`} className="flex items-center justify-between gap-3 rounded-lg border p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+      <span>
+        <span className="block font-medium">{due.length === 1 ? "1 line to review" : `${due.length} lines to review`}</span>
+        <span className="block text-sm text-zinc-500">
+          {due[0].title} ({due[0].prospectName})
+        </span>
+      </span>
+      <span className="shrink-0 text-sm underline">Practise now</span>
+    </Link>
+  );
+}
+
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-10">
@@ -87,6 +105,10 @@ export default function Home() {
           <Link href="/progress" className="rounded-full border px-4 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900">Progress</Link>
         </nav>
       </header>
+
+      <Suspense fallback={null}>
+        <Reviews />
+      </Suspense>
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

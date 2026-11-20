@@ -51,6 +51,39 @@ sqlite.exec(`
     cost_usd REAL NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS lessons (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    ord INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    rule TEXT NOT NULL,
+    data TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'not_started',
+    screen INTEGER NOT NULL DEFAULT 0,
+    gut_pick TEXT,
+    best_score REAL,
+    review_step INTEGER NOT NULL DEFAULT 0,
+    next_review_at INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    UNIQUE (session_id, ord)
+  );
+  CREATE TABLE IF NOT EXISTS practice_attempts (
+    id TEXT PRIMARY KEY,
+    lesson_id TEXT NOT NULL,
+    attempt_number INTEGER NOT NULL,
+    mode TEXT NOT NULL,
+    is_review INTEGER NOT NULL DEFAULT 0,
+    transcript TEXT NOT NULL,
+    audio_path TEXT,
+    duration_sec REAL,
+    speaking_sec REAL,
+    wpm INTEGER,
+    result TEXT,
+    score REAL,
+    error TEXT,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 // Columns added after the first release.
@@ -68,6 +101,12 @@ try {
 
 try {
   sqlite.exec("ALTER TABLE sessions ADD COLUMN script_used TEXT");
+} catch {
+  // column already exists
+}
+
+try {
+  sqlite.exec("ALTER TABLE sessions ADD COLUMN cue_card TEXT");
 } catch {
   // column already exists
 }

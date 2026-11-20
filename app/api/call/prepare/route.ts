@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import { generatePersona, rollDials, type Difficulty, type Persona } from "@/lib/persona";
+import { leadCard } from "@/lib/lead";
 
 const body = z.object({ sessionId: z.string().min(1) });
 
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
 
   const result = await ensurePersona(parsed.data.sessionId);
   if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-  // The persona is never sent to the browser before the report.
-  return Response.json({ ready: true });
+  // The persona is never sent to the browser before the report. Only the public lead card is,
+  // which is what a caller would have from a lead list before dialling.
+  const saved = db.select({ persona: sessions.persona }).from(sessions).where(eq(sessions.id, parsed.data.sessionId)).get();
+  const lead = saved?.persona ? leadCard(JSON.parse(saved.persona) as Persona) : null;
+  return Response.json({ ready: true, lead });
 }

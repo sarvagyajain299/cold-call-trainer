@@ -61,6 +61,17 @@ export const personaSchema = z.object({
   accent: z.string().describe("Concrete spoken accent, e.g. 'broad Yorkshire', 'General American', 'Gulf Arabic-accented English'"),
   voiceBrief: z.string().describe("One line describing the ideal voice: age feel, pitch, pace, accent"),
   pickupLine: z.string().describe("Exactly what they say on answering, as a real person would on this device and in this setting"),
+  lead: z
+    .object({
+      area: z.string().describe("Neighbourhood or district of the business, e.g. 'Al Barsha South'"),
+      googleRating: z.number().describe("Google rating 1.0-5.0 as listed publicly; match the prospect profile if it gives one"),
+      reviewCount: z.number().describe("Number of Google reviews; match the prospect profile if it gives one"),
+      website: z.string().describe("The business website domain, or 'none' if they have no website"),
+      publicNote: z.string().describe("One short line a caller could see online before calling, e.g. what the Maps listing or Instagram shows. Public facts only."),
+    })
+    .describe(
+      "What the caller can see BEFORE dialling, from a lead list or Google Maps. Public facts only, consistent with the profile and the rest of this person. Never include mood, situation, objections, pain points or anything only discovered on the call.",
+    ),
   situation: z.object({
     where: z.string(),
     doing: z.string().describe("What they were in the middle of when the phone rang"),

@@ -208,6 +208,40 @@ function CompareBlock({ c }: { c: Comparison }) {
   );
 }
 
+const LESSON_STATUS: Record<string, string> = { not_started: "Not started", in_progress: "In progress", done: "Done", skipped: "Skipped" };
+
+/** Under each fix: open its lesson, or (older calls) write the lessons first. */
+function LessonButton({
+  sessionId,
+  n,
+  lesson,
+  written,
+}: {
+  sessionId: string;
+  n: number;
+  lesson?: { status: string; bestScore: number | null };
+  written: boolean;
+}) {
+  if (lesson) {
+    return (
+      <Link
+        href={`/lessons/${sessionId}/${n}`}
+        className="self-start rounded-full bg-foreground px-4 py-1.5 text-sm text-background"
+      >
+        Practise this · Lesson {n} · {LESSON_STATUS[lesson.status] ?? lesson.status}
+        {lesson.bestScore !== null ? `, best ${lesson.bestScore}/10` : ""}
+      </Link>
+    );
+  }
+  if (written) return null;
+  return (
+    <p className="text-sm">
+      <Link href={`/lessons/${sessionId}`} className="rounded-full border px-4 py-1.5">Turn into lessons</Link>
+      <span className="ml-2 text-xs text-zinc-500">writes all 3 lessons once, about $0.10</span>
+    </p>
+  );
+}
+
 const SECTION_IDS = ["worked", "fixes", "timeline", "scores", "voice", "self", "who", "transcript"] as const;
 
 export function ReportView({
@@ -219,6 +253,7 @@ export function ReportView({
   sheetShown,
   presetId,
   savedLines = [],
+  lessons,
 }: {
   sessionId: string;
   projectName: string;
@@ -230,6 +265,8 @@ export function ReportView({
   presetId?: string;
   /** Lines already in the project cheat sheet's "My own lines". */
   savedLines?: string[];
+  /** This call's lessons (one per fix, in order). Empty if they have not been written yet. */
+  lessons?: { ord: number; status: string; bestScore: number | null }[];
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const { analysis: a, meta, metrics } = report;
@@ -396,6 +433,7 @@ export function ReportView({
                 </p>
                 <Labelled label="Why it matters" text={f.why} />
                 <Labelled label="Practice this" text={f.howToPractice} />
+                <LessonButton sessionId={sessionId} n={i + 1} lesson={lessons?.find((l) => l.ord === i + 1)} written={!!lessons?.length} />
               </li>
             );
           })}

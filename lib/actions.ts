@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { presets, sessions } from "@/db/schema";
 import { presetInput, sessionInput } from "@/lib/validation";
+import { attemptsFor, completeLesson, getLesson } from "@/lib/lessons/store";
+import { cueLine } from "@/lib/lessons/model";
 
 export type FormState = { error?: string } | undefined;
 
@@ -23,7 +25,7 @@ export async function createPreset(_prev: FormState, formData: FormData): Promis
 
 // Starts a fresh call against the same prospect: same person, mood and situation, so you can try again.
 // The persona is copied, so no new one is generated and nothing is spent on Anthropic.
-export async function redoCall(sourceId: string) {
+function copySession(sourceId: string, extra: { cueCard?: string } = {}): string {
   const source = db.select().from(sessions).where(eq(sessions.id, sourceId)).get();
   if (!source?.persona) throw new Error("That call has no prospect to reuse");
 
@@ -36,10 +38,25 @@ export async function redoCall(sourceId: string) {
       difficulty: source.difficulty,
       persona: source.persona,
       createdAt: Date.now(),
+      ...extra,
     })
     .run();
   revalidatePath("/calls");
-  redirect(`/call/${id}`);
+  return id;
+}
+
+export async function redoCall(sourceId: string) {
+  redirect(`/call/${copySession(sourceId)}`);
+}
+
+// "Try it on [prospect] again" from a lesson: the same call again, with the lesson's line pinned on the script.
+export async function redoWithCue(sessionId: string, lessonId: string) {
+  const lesson = getLesson(lessonId);
+  if (!lesson || lesson.sessionId !== sessionId) throw new Error("Lesson not found");
+  const line = cueLine(lesson.data.cueCard.line, attemptsFor(lesson.id));
+  const cueCard = JSON.stringify({ label: lesson.data.cueCard.label, line, lessonId: lesson.id });
+  if (lesson.status !== "done") completeLesson(lesson);
+  redirect(`/call/${copySession(sessionId, { cueCard })}`);
 }
 
 export async function createSession(_prev: FormState, formData: FormData): Promise<FormState> {

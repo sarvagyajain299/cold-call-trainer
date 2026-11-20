@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { PitchDetector } from "pitchy";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheatPanel, usePanelPref, type PanelData } from "@/components/CheatPanel";
+import { LeadCard } from "@/components/LeadCard";
+import type { LeadCard as Lead } from "@/lib/lead";
 import {
   ConversationProvider,
   useConversationControls,
@@ -70,6 +72,7 @@ export function CallScreen(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [prep, setPrep] = useState<"loading" | "ready" | "failed">("loading");
+  const [lead, setLead] = useState<Lead | null>(null);
   const [lineUsed, setLineUsed] = useState(false);
 
   const conversationId = useRef<string | null>(null);
@@ -157,8 +160,11 @@ export function CallScreen(props: Props) {
       body: JSON.stringify({ sessionId: props.sessionId }),
     })
       .then(async (res) => {
-        if (res.ok) return setPrep("ready");
         const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setLead(data.lead ?? null);
+          return setPrep("ready");
+        }
         setError(data.error ?? "Could not prepare the prospect.");
         setPrep("failed");
       })
@@ -209,6 +215,7 @@ export function CallScreen(props: Props) {
         seconds={seconds}
         error={error}
         prep={prep}
+        lead={lead}
         lineUsed={lineUsed}
         panelVisible={panelVisible}
         onPanelToggle={setPanelVisible}
@@ -255,6 +262,7 @@ type BodyProps = Props & {
   seconds: number;
   error: string | null;
   prep: "loading" | "ready" | "failed";
+  lead: Lead | null;
   lineUsed: boolean;
   panelVisible: boolean;
   onPanelToggle: (v: boolean) => void;
@@ -277,13 +285,13 @@ function SelfReview({ sessionId }: { sessionId: string }) {
         body: JSON.stringify({ text }),
       }).catch(() => undefined);
     }
-    router.push(`/report/${sessionId}`);
+    router.push(`/lessons/${sessionId}`);
   };
 
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Before you see the scorecard: how did it go?</span>
+        <span className="font-medium">Before your lessons: how did it go?</span>
         <span className="text-zinc-500">What went well, and what would you redo? The coach will compare this with what really happened.</span>
         <textarea
           value={text}
@@ -299,7 +307,7 @@ function SelfReview({ sessionId }: { sessionId: string }) {
           disabled={saving}
           className="rounded-full bg-foreground px-5 py-2 text-sm text-background disabled:opacity-50"
         >
-          {saving ? "Opening…" : "See my scorecard"}
+          {saving ? "Opening…" : "See my lessons"}
         </button>
         <button onClick={() => go(false)} disabled={saving} className="text-sm underline disabled:opacity-50">
           Skip
@@ -315,6 +323,7 @@ function CallBody({
   seconds,
   error,
   prep,
+  lead,
   lineUsed,
   panelVisible,
   onPanelToggle,
@@ -355,7 +364,17 @@ function CallBody({
 
       <section className="rounded-lg border p-4 text-sm">
         <p className="font-medium">Who you are calling</p>
-        <p className="mt-1 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400">{profile}</p>
+        <div className="mt-2">
+          {lead ? (
+            <LeadCard lead={lead} />
+          ) : prep === "loading" ? (
+            <p className="text-zinc-500">Looking up the lead…</p>
+          ) : null}
+        </div>
+        <details className="mt-3">
+          <summary className="cursor-pointer text-zinc-500">Prospect type you entered</summary>
+          <p className="mt-1 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400">{profile}</p>
+        </details>
         <p className="mt-3 font-medium">Goal</p>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">{callGoal}</p>
       </section>

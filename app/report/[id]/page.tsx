@@ -12,6 +12,7 @@ import { personaKey } from "@/lib/people";
 import { buildComparison, findPrevious, type Comparison } from "@/lib/compare";
 import { GenerateReport } from "@/components/GenerateReport";
 import { ReportView } from "@/components/ReportView";
+import { lessonsForSession } from "@/lib/lessons/store";
 
 async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -55,6 +56,7 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
           presetId={session.presetId}
           savedLines={getSheet(session.presetId).sections.find((x) => x.id === "notes")?.lines ?? []}
           sheetShown={session.sheetShown === null ? null : session.sheetShown === 1}
+          lessons={lessonsForSession(session.id).map((l) => ({ ord: l.ord, status: l.status, bestScore: l.bestScore }))}
         />
         {usage.rows.length > 0 && (
           <p className="text-xs text-zinc-500">
@@ -81,10 +83,25 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   return <GenerateReport sessionId={session.id} />;
 }
 
+// Back to the lessons for this call (they are written the first time they are opened).
+async function LessonsLink({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return (
+    <Link href={`/lessons/${id}`} className="font-medium underline">
+      Lessons for this call
+    </Link>
+  );
+}
+
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
-      <Link href="/" className="text-sm text-zinc-500">← Home</Link>
+      <nav className="flex items-center gap-5 pr-28 text-sm lg:pr-0">
+        <Link href="/" className="text-zinc-500">← Home</Link>
+        <Suspense fallback={null}>
+          <LessonsLink params={params} />
+        </Suspense>
+      </nav>
       <Suspense fallback={<p className="text-sm text-zinc-500">Loading…</p>}>
         <Loaded params={params} />
       </Suspense>

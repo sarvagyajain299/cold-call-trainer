@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildComparison, compareReports, findPrevious, METRICS } from "@/lib/compare";
+import { buildComparison, compareReports, findPrevious, METRICS, findPreviousInProject } from "@/lib/compare";
 import { ABOUT } from "@/lib/about";
 import { buildSeries, countHabits } from "@/lib/progress";
 import type { StoredReport } from "@/lib/scoring";
@@ -87,5 +87,22 @@ describe("progress", () => {
       report(1, 150, { moments: [{ kind: "miss", tag }], topFixes: [{ tag }] });
     const habits = countHabits([tagged("no_ask"), tagged("no_ask"), tagged("fillers"), report(1, 150)]);
     expect(habits[0]).toMatchObject({ id: "no_ask", calls: 2, outOf: 3 });
+  });
+});
+
+describe("findPreviousInProject", () => {
+  const rows = [
+    { id: "a", presetId: "p1", createdAt: 100, report: "{}" },
+    { id: "b", presetId: "p1", createdAt: 200, report: "{}" },
+    { id: "c", presetId: "p2", createdAt: 250, report: "{}" },
+    { id: "d", presetId: "p1", createdAt: 260, report: null },
+    { id: "cur", presetId: "p1", createdAt: 300, report: "{}" },
+    { id: "later", presetId: "p1", createdAt: 400, report: "{}" },
+  ];
+  it("takes the newest earlier scored call in the same project", () => {
+    expect(findPreviousInProject({ id: "cur", presetId: "p1", createdAt: 300 }, rows)?.id).toBe("b");
+  });
+  it("is null for the first call in a project", () => {
+    expect(findPreviousInProject({ id: "a", presetId: "p1", createdAt: 100 }, rows)).toBeNull();
   });
 });

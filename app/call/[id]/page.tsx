@@ -16,13 +16,19 @@ async function Loaded({ params }: { params: Promise<{ id: string }> }) {
   if (!preset) notFound();
 
   const sheet = getSheet(preset.id);
+  let cueCard: { label: string; line: string } | null = null;
+  try {
+    cueCard = session.cueCard ? (JSON.parse(session.cueCard) as { label: string; line: string }) : null;
+  } catch {
+    cueCard = null;
+  }
   return (
     <CallScreen
       sessionId={session.id}
       presetName={preset.name}
       callGoal={preset.callGoal}
       profile={session.profile}
-      sheet={{ presetId: preset.id, sections: sheet.sections, generated: sheet.generatedAt !== null, personal: getPersonal() }}
+      sheet={{ presetId: preset.id, sections: sheet.sections, generated: sheet.generatedAt !== null, personal: getPersonal(), cueCard }}
     />
   );
 }

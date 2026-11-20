@@ -50,6 +50,8 @@ export type PanelData = {
   sections: Section[];
   generated: boolean;
   personal: Personal;
+  /** A line from a lesson, pinned at the top for this call ("Try it on ... again"). */
+  cueCard?: { label: string; line: string } | null;
 };
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
@@ -74,6 +76,13 @@ export function CheatPanel({ data, profile, visible, onToggle }: { data: PanelDa
         <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Call script</h2>
         <button onClick={() => onToggle(false)} className="text-sm underline">Hide</button>
       </div>
+
+      {data.cueCard && (
+        <section className="rounded-lg border-2 border-orange-400! p-3" aria-label="From your lesson">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">From your lesson · {data.cueCard.label}</p>
+          <p className="mt-1 text-base font-semibold leading-snug">{data.cueCard.line}</p>
+        </section>
+      )}
 
       {calling && <p className="text-xs text-zinc-500">Calling: {calling}</p>}
       {data.personal.focus && (

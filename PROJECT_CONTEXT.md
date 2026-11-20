@@ -384,3 +384,17 @@ Copy the `recordings/` folder **and** `trainer.db`, `trainer.db-wal` and `traine
 3. Do they want drill mode (short repeated reps) built, and for which skills first (openers, objections, closes)?
 4. Is the Sound Effects permission on the ElevenLabs key, and do they want background noise at all?
 5. Do they want any of this on another device or shared with others later? That would need login and deployment changes (see 3.1).
+
+---
+
+## Post-call lessons (built 2026-11-20)
+
+Spec: `docs/superpowers/specs/2026-11-20-post-call-lessons.md` (plan) and `...-brief.md` (the user's original brief).
+- After a call + self-review, the user lands on `/lessons/[sessionId]` (lessons home), not the report. The report is unchanged and one tap away.
+- 3 lessons per scorecard (one per "Fix these first"), flow at `/lessons/[id]/[n]`: gut check (lesson 1), find it, choose, rule, practice, cue card. Review of the practice screen alone at `/review/[lessonId]`; home shows "N lines to review".
+- Code: `lib/lessons/` (model = pure, generate = one Opus call at effort medium + verification against the transcript, evaluate = Sonnet `claude-sonnet-5-5` effort low, store = DB). Tables `lessons`, `practice_attempts`, column `sessions.cue_card`.
+- Full call audio (both voices) is saved free to `recordings/<id>.call.mp3` after each call (`lib/callAudio.ts`, via `after()` in the end route) and streamed by `GET /api/call/[id]/call-audio`.
+- Real costs (Rajesh test): lesson generation $0.0996 per call (all 3 lessons); Sonnet practice check about $0.005–0.006 per attempt (Opus would be about $0.011).
+- `scripts/compare-eval.mts` runs 3 sample answers through Sonnet and Opus (costs about $0.05).
+- Gotcha: the global `* { border-color: var(--line) }` rule is unlayered, so it beats Tailwind border-colour utilities. Lesson code uses `border-ios-sep!` (important) instead of changing the global rule.
+- Gotcha: Turbopack missed a change made by appending to a file from the shell (`cat >>`); the dev server kept the old module until the file was edited normally.

@@ -142,3 +142,17 @@ export function findPrevious<T extends { id: string; createdAt: number; persona:
     .sort((a, b) => b.createdAt - a.createdAt);
   return earlier[0] ?? null;
 }
+
+/**
+ * Newest earlier scored call in the same project. `createdAt` must be the report's createdAt
+ * (when the call was scored), not the session's, since a session can be created days before its call.
+ */
+export function findPreviousInProject<T extends { id: string; presetId: string; createdAt: number; report: string | null }>(
+  current: { id: string; presetId: string; createdAt: number },
+  all: T[],
+): T | null {
+  const earlier = all
+    .filter((s) => s.id !== current.id && s.report && s.presetId === current.presetId && s.createdAt < current.createdAt)
+    .sort((a, b) => b.createdAt - a.createdAt);
+  return earlier[0] ?? null;
+}

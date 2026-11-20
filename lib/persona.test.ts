@@ -17,6 +17,7 @@ const persona: Persona = {
   accent: "Yorkshire",
   voiceBrief: "mid-40s, warm, quick pace, Yorkshire",
   pickupLine: "Collins Dental, Sarah speaking.",
+  lead: { area: "Headingley", googleRating: 4.7, reviewCount: 212, website: "collinsdental.co.uk", publicNote: "Two clinics in Leeds" },
   situation: { where: "at reception", doing: "sorting patient files", whoIsAround: "a nurse", soundscape: "phones", minutesAvailable: 2 },
   emotion: { moodNow: "frazzled after a no-show", stress: 7, underlyingFeeling: "annoyed at the interruption" },
   personality: {
